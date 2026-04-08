@@ -1,0 +1,12 @@
+node_modules/
+web/node_modules/
+functions/node_modules/
+web/dist/
+.env
+web/.env
+*.log
+.firebase/
+# Service account keys — never commit
+upwork Servive account key.json
+*-firebase-adminsdk-*.json
+secrets/
