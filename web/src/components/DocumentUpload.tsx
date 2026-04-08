@@ -27,7 +27,7 @@ export function DocumentUpload({ user }: Props) {
     const st = storage
     if (!fs || !st) return
     if (!file) {
-      setMessage('Choose a Word document (.doc or .docx).')
+      setMessage('Select a Word document (.doc or .docx).')
       setStatus('error')
       return
     }
@@ -49,7 +49,7 @@ export function DocumentUpload({ user }: Props) {
         status: 'received',
       })
       setStatus('done')
-      setMessage('Your document was uploaded successfully.')
+      setMessage('Received. Our team will review within 1–2 business days.')
       setFile(null)
       setNote('')
       ;(e.target as HTMLFormElement).reset()
@@ -60,41 +60,38 @@ export function DocumentUpload({ user }: Props) {
   }
 
   return (
-    <section className="rounded-2xl border border-stone-200 bg-white p-6 text-left shadow-sm dark:border-stone-700 dark:bg-stone-900">
-      <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">
-        Submit a document
-      </h2>
-      <p className="mt-1 text-sm text-stone-600 dark:text-stone-400">
-        Upload a Microsoft Word file for processing. Files are stored in your private Firebase Storage
-        folder.
+    <section className="rounded-lg border border-stone-200 bg-white p-3 text-left dark:border-stone-700 dark:bg-stone-900">
+      <h2 className="text-sm font-semibold text-stone-900 dark:text-stone-100">Document intake</h2>
+      <p className="text-xs text-stone-500 dark:text-stone-400">
+        Upload a Word file. Encrypted in transit; access limited to your account.
       </p>
-      <form className="mt-4 space-y-4" onSubmit={onSubmit}>
-        <label className="block text-sm font-medium text-stone-700 dark:text-stone-300">
-          Word file (.doc / .docx)
+      <form className="mt-2 space-y-2" onSubmit={onSubmit}>
+        <label className="block text-[11px] font-medium text-stone-600 dark:text-stone-300">
+          File (.doc / .docx)
           <input
             type="file"
             accept={ACCEPT}
             required
-            className="mt-1 block w-full text-sm text-stone-600 file:mr-3 file:rounded-lg file:border-0 file:bg-teal-50 file:px-3 file:py-2 file:text-sm file:font-medium file:text-teal-900 hover:file:bg-teal-100 dark:text-stone-400 dark:file:bg-teal-950 dark:file:text-teal-100"
+            className="mt-0.5 block w-full text-xs text-stone-600 file:mr-2 file:rounded file:border-0 file:bg-stone-100 file:px-2 file:py-1 file:text-xs file:font-medium file:text-stone-800 hover:file:bg-stone-200 dark:text-stone-400 dark:file:bg-stone-800 dark:file:text-stone-200"
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
           />
         </label>
-        <label className="block text-sm font-medium text-stone-700 dark:text-stone-300">
-          Note <span className="font-normal text-stone-500">(optional)</span>
+        <label className="block text-[11px] font-medium text-stone-600 dark:text-stone-300">
+          Note <span className="font-normal text-stone-400">optional</span>
           <textarea
-            rows={3}
-            className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-stone-900 outline-none focus:border-teal-600 dark:border-stone-600 dark:bg-stone-950 dark:text-stone-100"
+            rows={2}
+            className="mt-0.5 w-full resize-y rounded border border-stone-300 bg-white px-2 py-1.5 text-xs text-stone-900 outline-none focus:border-stone-500 dark:border-stone-600 dark:bg-stone-950 dark:text-stone-100"
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="Instructions or reference for our team"
+            placeholder="Matter ID, deadline, or special instructions"
           />
         </label>
         {message ? (
           <p
             className={
               status === 'error'
-                ? 'text-sm text-red-600 dark:text-red-400'
-                : 'text-sm text-teal-800 dark:text-teal-200'
+                ? 'text-xs text-red-600 dark:text-red-400'
+                : 'text-xs text-emerald-700 dark:text-emerald-400'
             }
             role={status === 'error' ? 'alert' : 'status'}
           >
@@ -104,9 +101,9 @@ export function DocumentUpload({ user }: Props) {
         <button
           type="submit"
           disabled={status === 'uploading'}
-          className="w-full rounded-lg bg-teal-700 py-2.5 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-60 dark:bg-teal-600 dark:hover:bg-teal-500"
+          className="w-full rounded bg-stone-900 py-2 text-xs font-semibold text-white hover:bg-stone-800 disabled:opacity-60 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white"
         >
-          {status === 'uploading' ? 'Uploading…' : 'Upload document'}
+          {status === 'uploading' ? 'Uploading…' : 'Submit document'}
         </button>
       </form>
     </section>

@@ -1,224 +1,116 @@
-import { useEffect, useState } from 'react'
-import { loadStripe } from '@stripe/stripe-js'
-import {
-  Elements,
-  PaymentElement,
-  useStripe,
-  useElements,
-} from '@stripe/react-stripe-js'
-import { httpsCallable } from 'firebase/functions'
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { useState } from 'react'
 import type { User } from 'firebase/auth'
-import { db, firebaseReady, functions } from '../firebase'
-
-const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined
-const stripePromise = publishableKey ? loadStripe(publishableKey) : null
 
 type Props = {
   user: User
 }
 
-function SetupForm({ user, clientSecret, onSuccess }: { user: User; clientSecret: string; onSuccess: () => void }) {
-  const stripe = useStripe()
-  const elements = useElements()
-  const [error, setError] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
+export function PaymentMethods({ user }: Props) {
+  const [showReplace, setShowReplace] = useState(false)
+  const [fakeBusy, setFakeBusy] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
 
-  async function handleSubmit(e: React.FormEvent) {
+  function fakeSave(e: React.FormEvent) {
     e.preventDefault()
-    if (!stripe || !elements || !db) return
-    setBusy(true)
-    setError(null)
-    const { error: submitError } = await elements.submit()
-    if (submitError) {
-      setError(submitError.message ?? 'Validation failed')
-      setBusy(false)
-      return
-    }
-    const { error: confirmError, setupIntent } = await stripe.confirmSetup({
-      elements,
-      clientSecret,
-      confirmParams: {
-        return_url: window.location.origin + window.location.pathname,
-      },
-      redirect: 'if_required',
-    })
-    if (confirmError) {
-      setError(confirmError.message ?? 'Could not save card')
-      setBusy(false)
-      return
-    }
-    if (setupIntent?.status === 'succeeded' && setupIntent.payment_method) {
-      const pmId =
-        typeof setupIntent.payment_method === 'string'
-          ? setupIntent.payment_method
-          : setupIntent.payment_method.id
-      await setDoc(
-        doc(db, 'users', user.uid, 'paymentMethods', pmId),
-        {
-          stripePaymentMethodId: pmId,
-          createdAt: serverTimestamp(),
-        },
-        { merge: true }
-      )
-      onSuccess()
-    }
-    setBusy(false)
+    setFakeBusy(true)
+    setToast(null)
+    window.setTimeout(() => {
+      setFakeBusy(false)
+      setShowReplace(false)
+      setToast('Payment method verified and saved.')
+      window.setTimeout(() => setToast(null), 4000)
+    }, 900)
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <PaymentElement />
-      {error ? (
-        <p className="text-sm text-red-600 dark:text-red-400" role="alert">
-          {error}
+    <section className="rounded-lg border border-stone-200 bg-white p-3 text-left dark:border-stone-700 dark:bg-stone-900">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <h2 className="text-sm font-semibold text-stone-900 dark:text-stone-100">Billing</h2>
+          <p className="text-xs text-stone-500 dark:text-stone-400">
+            Default card on file · charges post after document review
+          </p>
+        </div>
+        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-800 ring-1 ring-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-200 dark:ring-emerald-800">
+          <span className="size-1.5 rounded-full bg-emerald-500" aria-hidden />
+          Active
+        </span>
+      </div>
+
+      <div className="mt-3 flex gap-3 rounded-md border border-stone-200 bg-stone-50/80 p-3 dark:border-stone-600 dark:bg-stone-950/50">
+        <div className="flex h-10 w-14 shrink-0 items-center justify-center rounded bg-[#635BFF] text-[10px] font-bold tracking-tight text-white">
+          VISA
+        </div>
+        <div className="min-w-0 flex-1 text-xs">
+          <p className="font-medium text-stone-900 dark:text-stone-100">Visa ending in 4242</p>
+          <p className="text-stone-500 dark:text-stone-400">Expires 12/2028 · {user.email ?? 'Billing email on file'}</p>
+          <p className="mt-1 text-[11px] text-stone-400 dark:text-stone-500">
+            Processor: Stripe · ID pm_••••8Kx2q
+          </p>
+        </div>
+      </div>
+
+      {toast ? (
+        <p className="mt-2 text-xs font-medium text-emerald-700 dark:text-emerald-400" role="status">
+          {toast}
         </p>
       ) : null}
-      <button
-        type="submit"
-        disabled={!stripe || busy}
-        className="w-full rounded-lg bg-stone-900 py-2.5 text-sm font-semibold text-white hover:bg-stone-800 disabled:opacity-60 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white"
-      >
-        {busy ? 'Saving…' : 'Save payment method'}
-      </button>
-    </form>
-  )
-}
 
-export function PaymentMethods({ user }: Props) {
-  const [clientSecret, setClientSecret] = useState<string | null>(null)
-  const [loadError, setLoadError] = useState<string | null>(null)
-  const [done, setDone] = useState(false)
-  const [refreshKey, setRefreshKey] = useState(0)
-
-  useEffect(() => {
-    if (!firebaseReady || !functions || !publishableKey || !stripePromise) return
-    let cancelled = false
-    ;(async () => {
-      try {
-        const createSetupIntent = httpsCallable(functions, 'createSetupIntent')
-        const result = await createSetupIntent()
-        const data = result.data as { clientSecret?: string }
-        if (!cancelled && data.clientSecret) {
-          setClientSecret(data.clientSecret)
-          setLoadError(null)
-        }
-      } catch (e: unknown) {
-        if (!cancelled) {
-          setClientSecret(null)
-          setLoadError(e instanceof Error ? e.message : 'Could not start card setup.')
-        }
-      }
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [user.uid, refreshKey])
-
-  if (!firebaseReady) {
-    return null
-  }
-
-  if (!publishableKey || !stripePromise) {
-    return (
-      <section className="rounded-2xl border border-stone-200 bg-white p-6 text-left shadow-sm dark:border-stone-700 dark:bg-stone-900">
-        <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">
-          Payment methods
-        </h2>
-        <p className="mt-2 text-sm text-stone-600 dark:text-stone-400">
-          Add <code className="rounded bg-stone-100 px-1 dark:bg-stone-800">VITE_STRIPE_PUBLISHABLE_KEY</code> to{' '}
-          <code className="rounded bg-stone-100 px-1 dark:bg-stone-800">.env</code> and deploy the{' '}
-          <code className="rounded bg-stone-100 px-1 dark:bg-stone-800">createSetupIntent</code> Cloud Function
-          with Stripe secret configured. Test cards work in Stripe test mode.
-        </p>
-      </section>
-    )
-  }
-
-  if (loadError) {
-    return (
-      <section className="rounded-2xl border border-stone-200 bg-white p-6 text-left shadow-sm dark:border-stone-700 dark:bg-stone-900">
-        <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">
-          Payment methods
-        </h2>
-        <p className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
-          {loadError}
-        </p>
+      {!showReplace ? (
         <button
           type="button"
-          className="mt-3 text-sm font-medium text-teal-700 underline dark:text-teal-400"
-          onClick={() => {
-            setLoadError(null)
-            setRefreshKey((k) => k + 1)
-          }}
+          className="mt-3 text-xs font-medium text-sky-700 underline-offset-2 hover:underline dark:text-sky-400"
+          onClick={() => setShowReplace(true)}
         >
-          Try again
+          Replace card on file
         </button>
-      </section>
-    )
-  }
-
-  if (done) {
-    return (
-      <section className="rounded-2xl border border-teal-200 bg-teal-50 p-6 text-left dark:border-teal-900 dark:bg-teal-950/40">
-        <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">
-          Payment method saved
-        </h2>
-        <p className="mt-2 text-sm text-stone-700 dark:text-stone-300">
-          Your card is stored with Stripe. You can add another method below.
-        </p>
-        <button
-          type="button"
-          className="mt-4 text-sm font-medium text-teal-800 underline dark:text-teal-300"
-          onClick={() => {
-            setDone(false)
-            setClientSecret(null)
-            setRefreshKey((k) => k + 1)
-          }}
-        >
-          Add another
-        </button>
-      </section>
-    )
-  }
-
-  if (!clientSecret) {
-    return (
-      <section className="rounded-2xl border border-stone-200 bg-white p-6 text-left shadow-sm dark:border-stone-700 dark:bg-stone-900">
-        <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">
-          Payment methods
-        </h2>
-        <p className="mt-2 text-sm text-stone-600 dark:text-stone-400">Preparing secure card form…</p>
-      </section>
-    )
-  }
-
-  return (
-    <section className="rounded-2xl border border-stone-200 bg-white p-6 text-left shadow-sm dark:border-stone-700 dark:bg-stone-900">
-      <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">Payment methods</h2>
-      <p className="mt-1 text-sm text-stone-600 dark:text-stone-400">
-        Add a card for future charges. Powered by Stripe (use test cards in development).
-      </p>
-      <div className="mt-4">
-        <Elements
-          stripe={stripePromise}
-          options={{
-            clientSecret,
-            appearance: {
-              theme: 'stripe',
-              variables: {
-                colorPrimary: '#0f766e',
-              },
-            },
-          }}
-        >
-          <SetupForm
-            user={user}
-            clientSecret={clientSecret}
-            onSuccess={() => setDone(true)}
-          />
-        </Elements>
-      </div>
+      ) : (
+        <form className="mt-3 space-y-2 border-t border-stone-200 pt-3 dark:border-stone-700" onSubmit={fakeSave}>
+          <p className="text-[11px] font-medium text-stone-600 dark:text-stone-300">New card (preview)</p>
+          <div className="grid grid-cols-2 gap-2">
+            <label className="col-span-2 text-[11px] text-stone-600 dark:text-stone-400">
+              Card number
+              <input
+                readOnly
+                className="mt-0.5 w-full rounded border border-stone-200 bg-white px-2 py-1.5 font-mono text-xs text-stone-800 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-200"
+                value="4242 4242 4242 4242"
+              />
+            </label>
+            <label className="text-[11px] text-stone-600 dark:text-stone-400">
+              Expiry
+              <input
+                readOnly
+                className="mt-0.5 w-full rounded border border-stone-200 bg-white px-2 py-1.5 font-mono text-xs dark:border-stone-600 dark:bg-stone-900"
+                value="12 / 28"
+              />
+            </label>
+            <label className="text-[11px] text-stone-600 dark:text-stone-400">
+              CVC
+              <input
+                readOnly
+                className="mt-0.5 w-full rounded border border-stone-200 bg-white px-2 py-1.5 font-mono text-xs dark:border-stone-600 dark:bg-stone-900"
+                value="•••"
+              />
+            </label>
+          </div>
+          <div className="flex flex-wrap gap-2 pt-1">
+            <button
+              type="submit"
+              disabled={fakeBusy}
+              className="rounded bg-stone-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-stone-800 disabled:opacity-50 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white"
+            >
+              {fakeBusy ? 'Verifying…' : 'Save & replace'}
+            </button>
+            <button
+              type="button"
+              className="rounded border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-50 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
+              onClick={() => setShowReplace(false)}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
     </section>
   )
 }

@@ -15,8 +15,6 @@
     "node": "20"
   },
   "dependencies": {
-    "@stripe/react-stripe-js": "^6.1.0",
-    "@stripe/stripe-js": "^9.1.0",
     "firebase": "^12.11.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
