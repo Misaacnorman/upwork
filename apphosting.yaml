@@ -1,0 +1,17 @@
+# Firebase App Hosting — https://firebase.google.com/docs/app-hosting
+#
+# GitHub: https://github.com/Misaacnorman/upwork
+# In Firebase console, set App root directory to the repository root ( / or . ),
+# not "web", so this file and root package.json are visible to Cloud Buildpacks.
+#
+# FIREBASE_WEBAPP_CONFIG is injected at build; web/vite.config.ts maps it to VITE_*.
+
+runConfig:
+  minInstances: 0
+  maxInstances: 10
+  cpu: 1
+  memoryMiB: 512
+
+scripts:
+  buildCommand: npm ci && npm run build
+  runCommand: npm run start

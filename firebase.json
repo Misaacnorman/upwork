@@ -22,7 +22,7 @@
   "apphosting": [
     {
       "backendId": "upwork-web",
-      "rootDir": "web",
+      "rootDir": ".",
       "ignore": [
         "node_modules",
         ".git",

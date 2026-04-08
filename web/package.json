@@ -8,10 +8,11 @@
     "build": "tsc -b && vite build",
     "start": "node ./scripts/serve-dist.mjs",
     "lint": "eslint .",
+    "typecheck": "tsc -b",
     "preview": "vite preview"
   },
   "engines": {
-    "node": ">=20"
+    "node": "20"
   },
   "dependencies": {
     "@stripe/react-stripe-js": "^6.1.0",

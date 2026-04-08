@@ -92,10 +92,7 @@ export function PaymentMethods({ user }: Props) {
   const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
-    if (!firebaseReady || !functions || !publishableKey || !stripePromise) {
-      setClientSecret(null)
-      return
-    }
+    if (!firebaseReady || !functions || !publishableKey || !stripePromise) return
     let cancelled = false
     ;(async () => {
       try {

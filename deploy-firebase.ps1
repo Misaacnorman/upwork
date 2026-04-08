@@ -1,6 +1,6 @@
 # Deploy Firestore / Storage rules (service account key must stay out of git).
-# App Hosting: connect https://github.com/Misaacnorman/upwork in the Firebase console and push `main`;
-# rollouts build from `web/` using web/apphosting.yaml.
+# App Hosting: connect https://github.com/Misaacnorman/upwork and set App root to the repo root (not `web`);
+# rollouts use root apphosting.yaml, package.json (workspaces), and Procfile.
 # Optional CLI rollout (after backend exists): firebase deploy --only apphosting:upwork-web --project upwork-b253c
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path

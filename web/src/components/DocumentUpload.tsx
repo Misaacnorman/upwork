@@ -34,7 +34,7 @@ export function DocumentUpload({ user }: Props) {
     setStatus('uploading')
     setMessage(null)
     try {
-      const safeName = file.name.replace(/[^\w.\-]+/g, '_')
+      const safeName = file.name.replace(/[^\w.-]+/g, '_')
       const path = `submissions/${user.uid}/${Date.now()}_${safeName}`
       const storageRef = ref(st, path)
       await uploadBytes(storageRef, file, { contentType: file.type || undefined })

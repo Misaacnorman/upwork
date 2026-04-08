@@ -10,10 +10,7 @@ function App() {
   const [authReady, setAuthReady] = useState(!firebaseReady)
 
   useEffect(() => {
-    if (!firebaseReady || !auth) {
-      setAuthReady(true)
-      return
-    }
+    if (!firebaseReady || !auth) return
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u)
       setAuthReady(true)
