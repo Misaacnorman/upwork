@@ -3,7 +3,9 @@ import { onAuthStateChanged, type User } from 'firebase/auth'
 import { auth, firebaseReady } from './firebase'
 import { AuthPanel } from './components/AuthPanel'
 import { DocumentUpload } from './components/DocumentUpload'
+import { JobNumberLookup } from './components/JobNumberLookup'
 import { PaymentMethods } from './components/PaymentMethods'
+import { StripeSetupSimulation } from './components/StripeSetupSimulation'
 
 function App() {
   const [user, setUser] = useState<User | null>(null)
@@ -49,7 +51,11 @@ function App() {
             </div>
             <div className="lg:col-span-8">
               {user ? (
-                <DocumentUpload user={user} />
+                <div className="space-y-3">
+                  <DocumentUpload user={user} />
+                  <JobNumberLookup />
+                  <StripeSetupSimulation />
+                </div>
               ) : (
                 <section className="rounded-lg border border-dashed border-stone-300 bg-white/80 p-4 text-center dark:border-stone-600 dark:bg-stone-900/60">
                   <p className="text-xs text-stone-600 dark:text-stone-400">
