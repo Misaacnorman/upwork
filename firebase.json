@@ -21,7 +21,7 @@
   ],
   "apphosting": [
     {
-      "backendId": "upwork-web",
+      "backendId": "upwork",
       "rootDir": ".",
       "ignore": [
         "node_modules",
@@ -29,7 +29,8 @@
         "firebase-debug.log",
         "firebase-debug.*.log",
         "*.local"
-      ]
+      ],
+      "alwaysDeployFromSource": true
     }
   ]
 }
